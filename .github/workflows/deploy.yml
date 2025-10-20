@@ -34,6 +34,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "target/*.jar"
           target: "/home/ubuntu/app"
+    
 
       # 5. Restart the app on EC2
       - name: Restart app service
