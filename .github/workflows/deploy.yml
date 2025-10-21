@@ -3,31 +3,27 @@ name: Deploy Spring Boot App to EC2
 on:
   push:
     branches:
-      - main  # trigger on push to main branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up Java 17
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Build with Maven
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # 4. Copy JAR to EC2
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v1.0.3
+      - name: Deploy via SSH (script-based)
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
@@ -36,7 +32,6 @@ jobs:
             echo "Deploying new build to /home/ubuntu/app"
             cd /home/ubuntu/app
             sudo rm -f app.jar
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no target/*SNAPSHOT.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app.jar
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no target/*SNAPSHOT.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app.jar
             sudo systemctl restart myapp
             sudo systemctl status myapp --no-pager
-
