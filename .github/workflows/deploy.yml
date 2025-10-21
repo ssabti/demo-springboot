@@ -22,16 +22,24 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Deploy via SSH (script-based)
+      # Step 1: Upload new JAR to EC2
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "target/*SNAPSHOT.jar"
+          target: "/home/ubuntu/app/app.jar"
+
+      # Step 2: Restart the service remotely
+      - name: Restart Spring Boot service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Deploying new build to /home/ubuntu/app"
-            cd /home/ubuntu/app
-            sudo rm -f app.jar
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no target/*SNAPSHOT.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app.jar
+            echo "Restarting service..."
             sudo systemctl restart myapp
             sudo systemctl status myapp --no-pager
