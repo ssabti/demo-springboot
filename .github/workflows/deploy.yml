@@ -3,25 +3,25 @@ name: Deploy Spring Boot App to EC2
 on:
   push:
     branches:
-      - main  # deploys on pushes to main branch
+      - main  # trigger on push to main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the code
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up Java
+      # 2. Set up Java 17
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Build the project
+      # 3. Build with Maven
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
@@ -32,9 +32,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/*.jar"
-          target: "/home/ubuntu/app"
-    
+          source: "target/*SNAPSHOT.jar"
+          target: "/home/ubuntu/app/app.jar"
 
       # 5. Restart the app on EC2
       - name: Restart app service
@@ -45,3 +44,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo systemctl restart myapp
+            sudo systemctl status myapp --no-pager
