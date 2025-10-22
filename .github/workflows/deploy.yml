@@ -23,27 +23,15 @@ jobs:
         run: mvn clean package -DskipTests
 
       # 1️⃣ Upload the JAR with a temporary filename
-      - name: Copy JAR to EC2 safely
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/*SNAPSHOT.jar"
-          target: "/home/ubuntu/app/temp-app.jar"
-
-      # 2️⃣ Move and restart (atomic switch)
-      - name: Restart Spring Boot service
+      - name: Copy JAR and restart service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Replacing old app.jar with new build..."
-            sudo mv /home/ubuntu/app/temp-app.jar /home/ubuntu/app/app.jar
-            sudo chmod 644 /home/ubuntu/app/app.jar
-            echo "Restarting Spring Boot service..."
+            echo "Deploying new JAR..."
+            rm -f /home/ubuntu/app/app.jar
+            cat > /home/ubuntu/app/app.jar < target/*.jar
             sudo systemctl restart myapp
-            sleep 5
-            sudo systemctl status myapp --no-pager
+      
