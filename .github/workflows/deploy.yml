@@ -43,14 +43,6 @@ jobs:
           source: "target/project-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app/"
 
-      - name: Rename jar on EC2
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: mv /home/ubuntu/app/project-0.0.1-SNAPSHOT.jar /home/ubuntu/app/app.jar
-
       - name: Restart app on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
