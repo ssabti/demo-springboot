@@ -43,6 +43,7 @@ jobs:
           source: "target/project-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app/"
 
+
       - name: Restart app on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
