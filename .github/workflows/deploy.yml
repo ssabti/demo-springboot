@@ -22,16 +22,21 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # 1️⃣ Upload the JAR with a temporary filename
-      - name: Copy JAR and restart service
+      - name: Copy and restart on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Deploying new JAR..."
+            echo "Starting deployment..."
+            sudo systemctl stop myapp || true
             rm -f /home/ubuntu/app/app.jar
-            cat > /home/ubuntu/app/app.jar < target/*.jar
+            cat > /home/ubuntu/app/app.jar <<'EOF'
+            $(base64 target/project-0.0.1-SNAPSHOT.jar | base64 -d)
+            EOF
+            sudo chmod 755 /home/ubuntu/app/app.jar
+            echo "Restarting service..."
             sudo systemctl restart myapp
-      
+            sleep 5
+            sudo systemctl status myapp --no-pager
