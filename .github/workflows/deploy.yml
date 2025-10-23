@@ -33,7 +33,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "target/project-0.0.1-SNAPSHOT.jar"
           target: "/app/app.jar"
-          tar_tmp_path: "/home/ubuntu"
           overwrite: true
 
       # 5. Restart the app remotely
