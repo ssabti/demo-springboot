@@ -32,7 +32,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "target/project-0.0.1-SNAPSHOT.jar"
-          target: "/home/ubuntu/app/temp.jar"
+          target: "/app/app.jar"
           tar_tmp_path: "/home/ubuntu"
           overwrite: true
 
