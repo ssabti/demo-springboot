@@ -9,18 +9,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Set up Java 17
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
+      # 3. Build the JAR file
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
+      # 4. Upload to EC2 (using tar for reliability)
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -28,18 +32,21 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "target/project-0.0.1-SNAPSHOT.jar"
-          target: "/home/ubuntu/app/app.jar"
+          target: "/home/ubuntu/app/temp.jar"
+          tar_tmp_path: "/home/ubuntu"
           overwrite: true
 
-      - name: Restart app on EC2
+      # 5. Restart the app remotely
+      - name: Restart app service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Restarting service..."
-            sudo systemctl stop myapp || true
+            echo "Deploying new build..."
+            sudo mv /home/ubuntu/app/temp.jar /home/ubuntu/app/app.jar
             sudo chmod 755 /home/ubuntu/app/app.jar
-            sudo systemctl start myapp
+            sudo systemctl restart myapp
+            sleep 5
             sudo systemctl status myapp --no-pager
