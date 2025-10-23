@@ -38,6 +38,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Restarting app..."
+            echo "Restarting..."
             sudo systemctl restart myapp
             sudo systemctl status myapp --no-pager
