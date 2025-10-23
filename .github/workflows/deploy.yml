@@ -29,7 +29,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             mkdir -p /home/ubuntu/app
-#             optional: ensure ubuntu owns the dir so scp can write
             sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 
       - name: Upload JAR to EC2
@@ -49,9 +48,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-#             If a jar was uploaded, move it to the canonical app.jar name
             if ls /home/ubuntu/app/*.jar 1> /dev/null 2>&1; then
-#               If multiple jars exist, this will pick the first expanded by the shell
               mv /home/ubuntu/app/*.jar /home/ubuntu/app/app.jar || true
             fi
             sudo systemctl daemon-reload
