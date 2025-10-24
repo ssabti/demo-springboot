@@ -69,15 +69,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Find running instance in ASG
-        id: find-instance
-        run: |
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:aws:autoscaling:groupName,Values=myAutoScaling" \
-            --query 'Reservations[0].Instances[0].InstanceId' \
-            --output text)
-          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
-          echo "Using instance: $INSTANCE_ID"
+      - name: Use EC2 instance that was just deployed to
+        run: echo "INSTANCE_ID=${{ secrets.EC2_INSTANCE_ID }}" >> $GITHUB_ENV
 
       - name: Create new AMI
         id: create-ami
