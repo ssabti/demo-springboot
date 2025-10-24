@@ -38,8 +38,11 @@ jobs:
 
       - name: Upload latest JAR to EC2
         run: |
-          echo "Uploading JAR to EC2..."
-          scp -i ${{ secrets.EC2_SSH_KEY }} target/app-1.0.7.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app-1.0.7.jar
+          echo "$EC2_SSH_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          scp -i private_key.pem target/app-1.0.7.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app-1.0.7.jar
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
       - name: Verify uploaded JAR on EC2
         uses: appleboy/ssh-action@v1.0.3
