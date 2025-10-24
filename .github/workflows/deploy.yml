@@ -21,14 +21,6 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Verify built JAR
-        run: |
-          echo "Checking target directory..."
-          ls -lh target/
-          JAR_FILE=$(ls target/*.jar | head -n1)
-          echo "Built JAR: $JAR_FILE"
-          stat -c "%n | %s bytes | %y" "$JAR_FILE"
-
       - name: Prepare directory on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -39,14 +31,16 @@ jobs:
             mkdir -p /home/ubuntu/app
             sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 
-
       - name: Upload JAR to EC2
-        run: |
-          echo "$EC2_SSH_KEY" > private_key.pem
-          chmod 600 private_key.pem
-          scp -o StrictHostKeyChecking=no -i private_key.pem target/project-0.0.1-SNAPSHOT.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app.jar
-        env:
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "target/*.jar"
+          target: "/home/ubuntu/app/"
+          overwrite: true
+          debug: true
 
       - name: Verify uploaded JAR on EC2
         uses: appleboy/ssh-action@v1.0.3
