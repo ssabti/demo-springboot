@@ -40,7 +40,7 @@ jobs:
         run: |
           echo "$EC2_SSH_KEY" > private_key.pem
           chmod 600 private_key.pem
-          scp -i private_key.pem target/app-1.0.7.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app-1.0.7.jar
+          scp -o StrictHostKeyChecking=no -i private_key.pem target/app-1.0.7.jar ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/app-1.0.7.jar
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
