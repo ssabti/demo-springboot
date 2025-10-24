@@ -21,9 +21,6 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Verify built JAR
-        run: ls -lh target/
-
       - name: Prepare directory on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -34,21 +31,10 @@ jobs:
             mkdir -p /home/ubuntu/app
             sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 
-      - name: Verify EC2 app directory
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "Checking /home/ubuntu/app directory on EC2..."
-            ls -ld /home/ubuntu/app || echo "❌ Directory does not exist!"
-            echo
-            echo "Current contents (if any):"
-            ls -lh /home/ubuntu/app || echo "No files yet."
-            echo
-            echo "Directory owner and permissions:"
-            ls -ld /home/ubuntu/app
+      - name: Verify JAR built locally
+        run: |
+          echo "=== Checking JARs in target ==="
+          ls -lh target/*.jar || echo "❌ No JAR built!"
 
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
