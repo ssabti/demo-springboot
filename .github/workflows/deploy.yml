@@ -21,6 +21,14 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
+      - name: Verify built JAR
+        run: |
+          echo "Checking target directory..."
+          ls -lh target/
+          JAR_FILE=$(ls target/*.jar | head -n1)
+          echo "Built JAR: $JAR_FILE"
+          stat -c "%n | %s bytes | %y" "$JAR_FILE"
+
       - name: Prepare directory on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -31,10 +39,6 @@ jobs:
             mkdir -p /home/ubuntu/app
             sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 
-      - name: Verify JAR built locally
-        run: |
-          echo "=== Checking JARs in target ==="
-          ls -lh target/*.jar || echo "❌ No JAR built!"
 
       - name: Upload JAR to EC2
         run: |
