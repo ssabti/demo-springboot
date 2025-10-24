@@ -31,6 +31,10 @@ jobs:
             mkdir -p /home/ubuntu/app
             sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 
+      - name: Verify JAR inside Docker
+        run: ls -lh ${{ github.workspace }}/target/*.jar
+
+
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
