@@ -42,8 +42,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/*.jar"
-          target: "/home/ubuntu/app/"
+          source: "target/project-0.0.1-SNAPSHOT.jar"
+          target: "/home/ubuntu/app/app-1.0.7.jar"
           overwrite: true
 
       - name: Verify uploaded JAR on EC2
