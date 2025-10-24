@@ -48,73 +48,84 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Get the newest JAR from the upload
             NEW_JAR=$(ls -t /home/ubuntu/app/*.jar | head -n1)
-            mv -f "$NEW_JAR" /home/ubuntu/app/app-1.0.6.jar
             
-            ln -sf /home/ubuntu/app/app-1.0.6.jar /home/ubuntu/app/app.jar
+            # Create a versioned filename based on timestamp
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            VERSIONED_JAR="/home/ubuntu/app/app-$TIMESTAMP.jar"
             
-            sudo systemctl daemon-reload
+            # Move the new JAR to the versioned filename
+            mv -f "$NEW_JAR" "$VERSIONED_JAR"
+            
+            # Update symlink to point to the latest version
+            ln -sf "$VERSIONED_JAR" /home/ubuntu/app/app.jar
+            
+            # Restart the service
             sudo systemctl restart myapp
+            
+            # Optional: wait a few seconds and check status
             sleep 5
             sudo systemctl status myapp --no-pager
 
-  update-ami-and-asg:
-    name: Create new AMI and refresh Auto Scaling Group
-    needs: deploy
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Use EC2 instance that was just deployed to
-        run: echo "INSTANCE_ID=${{ secrets.EC2_INSTANCE_ID }}" >> $GITHUB_ENV
-
-      - name: Create new AMI
-        id: create-ami
-        run: |
-          AMI_ID=$(aws ec2 create-image \
-            --instance-id ${{ env.INSTANCE_ID }} \
-            --name "springboot-ami-$(date +%Y%m%d%H%M)" \
-            --description "AMI created from latest deployment" \
-            --no-reboot \
-            --output text)
-          echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
-          echo "Created AMI: $AMI_ID"
-
-      - name: Wait for AMI to become available
-        run: |
-          aws ec2 wait image-available --image-ids ${{ env.AMI_ID }}
-          echo "AMI ${{ env.AMI_ID }} is ready"
-
-      - name: Update Launch Template with new AMI
-        run: |
-          TEMPLATE_ID=$(aws ec2 describe-launch-templates \
-            --launch-template-names spring-template \
-            --query 'LaunchTemplates[0].LaunchTemplateId' \
-            --output text)
-          VERSION_ID=$(aws ec2 create-launch-template-version \
-            --launch-template-id $TEMPLATE_ID \
-            --source-version 1 \
-            --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}" \
-            --query 'LaunchTemplateVersion.VersionNumber' \
-            --output text)
-          echo "New Launch Template version: $VERSION_ID"
-          aws ec2 modify-launch-template \
-            --launch-template-id $TEMPLATE_ID \
-            --default-version $VERSION_ID
-          aws autoscaling update-auto-scaling-group \
-          --auto-scaling-group-name myAutoScaling \
-          --launch-template "LaunchTemplateName=spring-template,Version=$VERSION_ID"
-
-
-      - name: Start ASG instance refresh
-        run: |
-          aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name myAutoScaling \
-            --preferences '{"MinHealthyPercentage": 90, "InstanceWarmup": 120}'
-          echo "Triggered instance refresh for myAutoScaling"
+#  update-ami-and-asg:
+#    name: Create new AMI and refresh Auto Scaling Group
+#    needs: deploy
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ secrets.AWS_REGION }}
+#
+#      - name: Use EC2 instance that was just deployed to
+#        run: echo "INSTANCE_ID=${{ secrets.EC2_INSTANCE_ID }}" >> $GITHUB_ENV
+#
+#      - name: Create new AMI
+#        id: create-ami
+#        run: |
+#          AMI_ID=$(aws ec2 create-image \
+#            --instance-id ${{ env.INSTANCE_ID }} \
+#            --name "springboot-ami-$(date +%Y%m%d%H%M)" \
+#            --description "AMI created from latest deployment" \
+#            --no-reboot \
+#            --output text)
+#          echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
+#          echo "Created AMI: $AMI_ID"
+#
+#      - name: Wait for AMI to become available
+#        run: |
+#          aws ec2 wait image-available --image-ids ${{ env.AMI_ID }}
+#          echo "AMI ${{ env.AMI_ID }} is ready"
+#
+#      - name: Update Launch Template with new AMI
+#        run: |
+#          TEMPLATE_ID=$(aws ec2 describe-launch-templates \
+#            --launch-template-names spring-template \
+#            --query 'LaunchTemplates[0].LaunchTemplateId' \
+#            --output text)
+#          VERSION_ID=$(aws ec2 create-launch-template-version \
+#            --launch-template-id $TEMPLATE_ID \
+#            --source-version 1 \
+#            --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}" \
+#            --query 'LaunchTemplateVersion.VersionNumber' \
+#            --output text)
+#          echo "New Launch Template version: $VERSION_ID"
+#          aws ec2 modify-launch-template \
+#            --launch-template-id $TEMPLATE_ID \
+#            --default-version $VERSION_ID
+#          aws autoscaling update-auto-scaling-group \
+#          --auto-scaling-group-name myAutoScaling \
+#          --launch-template "LaunchTemplateName=spring-template,Version=$VERSION_ID"
+#
+#
+#      - name: Start ASG instance refresh
+#        run: |
+#          aws autoscaling start-instance-refresh \
+#            --auto-scaling-group-name myAutoScaling \
+#            --preferences '{"MinHealthyPercentage": 90, "InstanceWarmup": 120}'
+#          echo "Triggered instance refresh for myAutoScaling"
