@@ -41,18 +41,18 @@ jobs:
           target: "/home/ubuntu/app/"
           overwrite: true
 
-      - name: Rename and restart Spring Boot service
+      - name: Rename, symlink, and restart Spring Boot service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Force rename the newly uploaded JAR to app.jar
             NEW_JAR=$(ls -t /home/ubuntu/app/*.jar | head -n1)
-            mv -f "$NEW_JAR" /home/ubuntu/app/app.jar
+            mv -f "$NEW_JAR" /home/ubuntu/app/app-1.0.6.jar
             
-            # Restart the service
+            ln -sf /home/ubuntu/app/app-1.0.6.jar /home/ubuntu/app/app.jar
+            
             sudo systemctl daemon-reload
             sudo systemctl restart myapp
             sleep 5
