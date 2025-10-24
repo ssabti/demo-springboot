@@ -31,26 +31,23 @@ jobs:
             mkdir -p /home/ubuntu/app
             sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 
-      - name: Upload JAR to EC2
+      - name: Upload and replace app.jar on EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "target/*.jar"
-          target: "/home/ubuntu/app/"
+          target: "/home/ubuntu/app/app.jar"
           overwrite: true
 
-      - name: Rename JAR and restart Spring Boot service
+      - name: Restart Spring Boot service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            if ls /home/ubuntu/app/*.jar 1> /dev/null 2>&1; then
-              mv /home/ubuntu/app/*.jar /home/ubuntu/app/app.jar || true
-            fi
             sudo systemctl daemon-reload
             sudo systemctl restart myapp
             sleep 5
