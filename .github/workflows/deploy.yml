@@ -21,52 +21,56 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Prepare directory on EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            mkdir -p /home/ubuntu/app
-            sudo chown -R ubuntu:ubuntu /home/ubuntu/app
+      - name: Verify built JAR
+        run: ls -lh target/
 
-      - name: Upload JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/*.jar"
-          target: "/home/ubuntu/app/"
-          overwrite: true
 
-      - name: Rename, symlink, and restart Spring Boot service
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Get the newest JAR from the upload
-            NEW_JAR=$(ls -t /home/ubuntu/app/*.jar | head -n1)
-            
-            # Create a versioned filename based on timestamp
-            TIMESTAMP=$(date +%Y%m%d%H%M%S)
-            VERSIONED_JAR="/home/ubuntu/app/app-$TIMESTAMP.jar"
-            
-            # Move the new JAR to the versioned filename
-            mv -f "$NEW_JAR" "$VERSIONED_JAR"
-            
-            # Update symlink to point to the latest version
-            ln -sf "$VERSIONED_JAR" /home/ubuntu/app/app.jar
-            
-            # Restart the service
-            sudo systemctl restart myapp
-            
-            # Optional: wait a few seconds and check status
-            sleep 5
-            sudo systemctl status myapp --no-pager
+#      - name: Prepare directory on EC2
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.EC2_HOST }}
+#          username: ubuntu
+#          key: ${{ secrets.EC2_SSH_KEY }}
+#          script: |
+#            mkdir -p /home/ubuntu/app
+#            sudo chown -R ubuntu:ubuntu /home/ubuntu/app
+#
+#      - name: Upload JAR to EC2
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.EC2_HOST }}
+#          username: ubuntu
+#          key: ${{ secrets.EC2_SSH_KEY }}
+#          source: "target/*.jar"
+#          target: "/home/ubuntu/app/"
+#          overwrite: true
+#
+#      - name: Rename, symlink, and restart Spring Boot service
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.EC2_HOST }}
+#          username: ubuntu
+#          key: ${{ secrets.EC2_SSH_KEY }}
+#          script: |
+#            # Get the newest JAR from the upload
+#            NEW_JAR=$(ls -t /home/ubuntu/app/*.jar | head -n1)
+#
+#            # Create a versioned filename based on timestamp
+#            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+#            VERSIONED_JAR="/home/ubuntu/app/app-$TIMESTAMP.jar"
+#
+#            # Move the new JAR to the versioned filename
+#            mv -f "$NEW_JAR" "$VERSIONED_JAR"
+#
+#            # Update symlink to point to the latest version
+#            ln -sf "$VERSIONED_JAR" /home/ubuntu/app/app.jar
+#
+#            # Restart the service
+#            sudo systemctl restart myapp
+#
+#            # Optional: wait a few seconds and check status
+#            sleep 5
+#            sudo systemctl status myapp --no-pager
 
 
 #  update-ami-and-asg:
