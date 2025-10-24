@@ -40,10 +40,20 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "/home/runner/work/demo-springboot/demo-springboot/target/project-0.0.1-SNAPSHOT.jar"
+          source: "${{ github.workspace }}/target/project-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app/"
           overwrite: true
           debug: true
+
+      - name: Cleanup old JARs on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            rm -rf /home/ubuntu/app/app-*.jar
+            rm -rf /home/ubuntu/app/app.jar
 
       - name: Verify uploaded JAR on EC2
         uses: appleboy/ssh-action@v1.0.3
